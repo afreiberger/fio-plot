@@ -34,7 +34,7 @@ class Chart(object):
         keys = [int(x) for x in keys]
         keys.sort()
 
-        for x in [str(k) for k in keys]:
+        for x in [int(k) for k in keys]:
             series['x_series'].append(x)
             series['y_series1'].append(self.data[x]['iops'])
             series['y_series2'].append(self.data[x]['lat'])
@@ -55,7 +55,7 @@ class Chart(object):
                         color='#34bafa')
 
         ax.set_ylabel('IOP/s')
-        ax.set_xlabel('IO queue depth')
+        ax.set_xlabel('Job #')
         ax2.set_ylabel(r'$Average\ latency\ in\ \mu\ seconds$')
 
         if self.settings['title']:
@@ -84,7 +84,7 @@ class Chart(object):
         table_vals = [series['x_series'], series['y_series4']]
         cols = len(series['x_series'])
         table = ax3.table(cellText=table_vals, loc='center right', rowLabels=[
-                          'IO queue depth', r'$Latency\ \sigma\ \%$'],
+                          'Job #', r'$Latency\ \sigma\ \%$'],
                           colLoc='center right',
                           cellLoc='center right', colWidths=[0.05] * cols,
                           rasterized=False)
@@ -171,8 +171,7 @@ class Chart(object):
             ax1.set_xlabel(r'$Latency\ in\ ms\ or\ \mu$')
             ax1.set_title(str(self.settings['title']) + " | "
                     + str(mode).title() +
-                ' latency histogram | IO depth ' +
-                str(latency_data[depth]['iodepth']))
+                ' latency histogram | IO depth 16')
             ax1.set_xticks(x_pos + width / 2)
             ax1.set_xticklabels(x_series)
 
@@ -249,14 +248,15 @@ class benchmark(object):
                 rw = record['jobs'][0]['job options']['rw']
             except KeyError:
                 rw = record['global options']['rw']
-            if rw == 'rand' + str(mode):
-                row = {'iodepth': depth,
-                       'iops': record['jobs'][0][mode]['iops'],
-                       'lat': record['jobs'][0][mode]['lat']['mean'],
-                       'lat_stddev': record['jobs'][0][mode]['lat']['stddev'],
-                       'latency_ms': record['jobs'][0]['latency_ms'],
-                       'latency_us': record['jobs'][0]['latency_us']}
-                result[depth] = row
+            #if rw == 'rand' + str(mode):
+            for jobnum in range(0, len(record['jobs'])):
+                row = {'job': jobnum,
+                       'iops': record['jobs'][jobnum][mode]['iops'],
+                       'lat': record['jobs'][jobnum][mode]['lat_ns']['mean'],
+                       'lat_stddev': record['jobs'][jobnum][mode]['lat_ns']['stddev'],
+                       'latency_ms': record['jobs'][jobnum]['latency_ms'],
+                       'latency_us': record['jobs'][jobnum]['latency_us']}
+                result[jobnum] = row
 
         return result
 
